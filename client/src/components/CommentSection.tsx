@@ -51,7 +51,7 @@ export default function CommentSection(props: Props) {
                 signal,
                 props.postId,
                 sortBy,
-                search,
+                search.trim(),
                 pageParam,
             )
         },

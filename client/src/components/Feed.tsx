@@ -32,7 +32,7 @@ export default function Feed() {
         initialPageParam: 0,
         getNextPageParam: (prevPage) => prevPage.nextOffset,
         queryFn: ({ signal, pageParam }) =>
-            api.getPosts(signal, sortBy, search, pageParam),
+            api.getPosts(signal, sortBy, search.trim(), pageParam),
         select: (data) => {
             return data.pages.flatMap((page) => page.posts)
         },
