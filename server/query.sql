@@ -29,7 +29,13 @@ LEFT JOIN (
 ON mine_like.id = comment.id
 LEFT JOIN comment as reply_comment 
 ON reply_comment.id = comment.reply
-WHERE comment.post = $1 AND CASE WHEN @search::text != '' THEN comment.content ILIKE concat('%', @search::text, '%') ELSE true END
+WHERE comment.post = $1 AND CASE WHEN @search::text != '' THEN 
+    CASE WHEN LEFT(@search::text, 1) = '@' THEN
+        comment.author::text ILIKE concat('%', SUBSTRING(@search::text, 2), '%') 
+    ELSE 
+        comment.content ILIKE concat('%', @search::text, '%') 
+    END
+ELSE true END
 ORDER BY 
       CASE WHEN @date_asc::bool THEN comment.created_at END ASC,
       CASE WHEN @date_desc::bool THEN comment.created_at END DESC,
@@ -86,7 +92,13 @@ LEFT JOIN (
     WHERE post_like.author = $1
 ) as mine_like 
 ON mine_like.id = post.id
-WHERE CASE WHEN @search::text != '' THEN post.content ILIKE concat('%', @search::text, '%') ELSE true END
+WHERE CASE WHEN @search::text != '' THEN 
+    CASE WHEN LEFT(@search::text, 1) = '@' THEN
+        post.author::text ILIKE concat('%', SUBSTRING(@search::text, 2), '%') 
+    ELSE 
+        post.content ILIKE concat('%', @search::text, '%') 
+    END
+ELSE true END
 ORDER BY 
       CASE WHEN @date_asc::bool THEN post.created_at END ASC,
       CASE WHEN @date_desc::bool THEN post.created_at END DESC,

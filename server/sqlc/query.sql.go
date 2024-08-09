@@ -68,9 +68,7 @@ type CreateCommentWithReplyParams struct {
 	Reply   pgtype.Int4 `json:"reply"`
 }
 
-func (q *Queries) CreateCommentWithReply(
-	ctx context.Context, arg CreateCommentWithReplyParams,
-) (Comment, error) {
+func (q *Queries) CreateCommentWithReply(ctx context.Context, arg CreateCommentWithReplyParams) (Comment, error) {
 	row := q.db.QueryRow(ctx, createCommentWithReply,
 		arg.Author,
 		arg.Post,
@@ -225,7 +223,13 @@ LEFT JOIN (
 ON mine_like.id = comment.id
 LEFT JOIN comment as reply_comment 
 ON reply_comment.id = comment.reply
-WHERE comment.post = $1 AND CASE WHEN $5::text != '' THEN comment.content ILIKE concat('%', $5::text, '%') ELSE true END
+WHERE comment.post = $1 AND CASE WHEN $5::text != '' THEN 
+    CASE WHEN LEFT($5::text, 1) = '@' THEN
+        comment.author::text ILIKE concat('%', SUBSTRING($5::text, 2), '%') 
+    ELSE 
+        comment.content ILIKE concat('%', $5::text, '%') 
+    END
+ELSE true END
 ORDER BY 
       CASE WHEN $6::bool THEN comment.created_at END ASC,
       CASE WHEN $7::bool THEN comment.created_at END DESC,
@@ -255,9 +259,7 @@ type GetCommentsRow struct {
 	IsLiked            bool               `json:"isLiked"`
 }
 
-func (q *Queries) GetComments(
-	ctx context.Context, arg GetCommentsParams,
-) ([]GetCommentsRow, error) {
+func (q *Queries) GetComments(ctx context.Context, arg GetCommentsParams) ([]GetCommentsRow, error) {
 	rows, err := q.db.Query(ctx, getComments,
 		arg.Post,
 		arg.Author,
@@ -332,7 +334,13 @@ LEFT JOIN (
     WHERE post_like.author = $1
 ) as mine_like 
 ON mine_like.id = post.id
-WHERE CASE WHEN $4::text != '' THEN post.content ILIKE concat('%', $4::text, '%') ELSE true END
+WHERE CASE WHEN $4::text != '' THEN 
+    CASE WHEN LEFT($4::text, 1) = '@' THEN
+        post.author::text ILIKE concat('%', SUBSTRING($4::text, 2), '%') 
+    ELSE 
+        post.content ILIKE concat('%', $4::text, '%') 
+    END
+ELSE true END
 ORDER BY 
       CASE WHEN $5::bool THEN post.created_at END ASC,
       CASE WHEN $6::bool THEN post.created_at END DESC,
