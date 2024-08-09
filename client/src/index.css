@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+    scroll-behavior: smooth;
+}
+
+@font-face {
+    font-family: "SFProText";
+    src: url("./assets/fonts/SFProText-Regular.ttf") format("ttf");
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: "SFProText";
+    src: url("./assets/fonts/SFProText-Bold.ttf") format("ttf");
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: "SFProText";
+    src: url("./assets/fonts/SFProText-Light.ttf") format("ttf");
+    font-weight: light;
+}
+
+@font-face {
+    font-family: "SFProDisplay";
+    src: url("./assets/fonts/SF-Pro-Display-Bold.otf") format("otf");
+    font-weight: bold;
+}
+
+@layer base {
+    html {
+        font-family: "SFProText", system-ui, sans-serif;
+    }
+}
+
+@layer components {
+    .bg-normal-color {
+        @apply bg-zinc-100 dark:bg-zinc-900 transition-all duration-300;
+    }
+    .bg-accent-color {
+        @apply bg-zinc-200 dark:bg-zinc-800 transition-all duration-300;
+    }
+    .text-normal-color {
+        @apply text-zinc-900 dark:text-zinc-100 transition-colors duration-300;
+    }
+    .text-accent-color {
+        @apply text-emerald-600 dark:text-green-300 transition-colors duration-300;
+    }
+}
