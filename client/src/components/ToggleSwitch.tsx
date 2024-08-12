@@ -16,7 +16,7 @@ export default function ToggleSwitch(props: Props) {
                 readOnly
                 onClick={(e) => e.stopPropagation()}
             />
-            <span className="flex h-full w-full cursor-pointer rounded-full border-2 border-solid border-zinc-300 bg-zinc-300 transition-colors duration-300 before:duration-200 after:aspect-[1/1] after:rounded-[50%] after:bg-zinc-800 after:transition-[0.2s] peer-checked:before:grow dark:border-zinc-700 dark:bg-zinc-700 dark:after:bg-zinc-100"></span>
+            <span className="flex h-full w-full cursor-pointer rounded-full border-2 border-solid border-zinc-400 bg-zinc-400 transition-colors duration-300 before:duration-200 after:aspect-[1/1] after:rounded-[50%] after:bg-zinc-100 after:transition-colors after:duration-300 peer-checked:border-emerald-600 peer-checked:bg-emerald-600 peer-checked:before:grow dark:border-zinc-600 dark:bg-zinc-600 dark:after:bg-zinc-900 peer-checked:dark:border-green-300 peer-checked:dark:bg-green-300"></span>
         </label>
     )
 }

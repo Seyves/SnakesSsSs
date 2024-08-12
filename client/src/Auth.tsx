@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import { createAPI } from "./api"
-import App from "./App"
+import { createAPI } from "@/api"
+import App from "@/App"
 
 export default function Auth() {
     const [isL, setIsL] = useState(false)

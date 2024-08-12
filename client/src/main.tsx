@@ -1,7 +1,7 @@
 import React from "react"
 import ReactDOM from "react-dom/client"
-import Auth from "./Auth.tsx"
-import "./index.css"
+import Auth from "@/Auth.tsx"
+import "@/index.css"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 const queryClient = new QueryClient({

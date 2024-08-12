@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { debounce, throttle } from "./functions"
+import { debounce, throttle } from "@/functions"
 
 export function useThrottle<P extends any[]>(
     callback: (...props: P) => any,

@@ -35,18 +35,3 @@ html {
         font-family: "SFProText", system-ui, sans-serif;
     }
 }
-
-@layer components {
-    .bg-normal-color {
-        @apply bg-zinc-100 dark:bg-zinc-900 transition-all duration-300;
-    }
-    .bg-accent-color {
-        @apply bg-zinc-200 dark:bg-zinc-800 transition-all duration-300;
-    }
-    .text-normal-color {
-        @apply text-zinc-900 dark:text-zinc-100 transition-colors duration-300;
-    }
-    .text-accent-color {
-        @apply text-emerald-600 dark:text-green-300 transition-colors duration-300;
-    }
-}

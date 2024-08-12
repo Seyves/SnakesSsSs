@@ -9,7 +9,7 @@ export default function Button(props: Props) {
     return (
         <button
             {...props}
-            className="bg-emerald-600 dark:bg-green-300 text-zinc-100 dark:text-zinc-800 font-bold rounded-2xl w-20 h-8 md:w-24 md:h-10 flex items-center justify-center transition-colors duration-300"
+            className="flex h-8 w-20 items-center justify-center rounded-2xl bg-emerald-600 font-bold text-zinc-100 transition-colors duration-300 dark:bg-green-300 dark:text-zinc-800 md:h-10 md:w-24"
         >
             {props.children}
         </button>

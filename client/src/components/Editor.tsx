@@ -23,15 +23,15 @@ export default function Editor() {
     }
 
     return (
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onSubmit} className="px-4">
             <textarea
                 placeholder="Tell us ssSSssomething..."
                 onChange={(e) => setContent(e.target.value)}
                 value={content}
                 cols={30}
-                className="w-full h-28 md:h-40 placeholder:text-zinc-500 resize-none outline-none bg-zinc-200 dark:bg-zinc-800 transition-all duration-300 p-4 rounded-2xl"
+                className="h-28 w-full resize-none rounded-2xl bg-zinc-200 p-4 outline-none transition-all duration-300 placeholder:text-zinc-500 dark:bg-zinc-800 md:h-40"
             ></textarea>
-            <div className="mt-4 flex justify-end items-center">
+            <div className="mt-4 flex items-center justify-end">
                 <Button>{isPending ? <Spinner /> : "SsSssend"}</Button>
             </div>
         </form>

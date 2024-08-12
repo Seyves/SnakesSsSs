@@ -8,7 +8,7 @@ import Post from "@/components/Post.tsx"
 import AnimateSlideIn from "@/components/animation/AnimateSlideIn.tsx"
 import Organize from "@/components/Organize.tsx"
 import ErrorFallback from "@/components/ErrorFallback"
-import SpinnerCentered from "./SpinnerCentered"
+import SpinnerCentered from "@/components/SpinnerCentered"
 
 export default function Feed() {
     const [search, setSearch] = useState("")
@@ -61,7 +61,7 @@ export default function Feed() {
                         {isFetchingNextPage && <SpinnerCentered />}
                         {!isFetchingNextPage && hasNextPage && (
                             <div
-                                className="cursor-pointer bg-emerald-600 my-4 dark:bg-green-300 font-bold h-8 md:h-10 rounded-xl text-zinc-100 dark:text-zinc-800 flex items-center justify-center"
+                                className="my-4 flex h-8 cursor-pointer items-center justify-center rounded-xl bg-emerald-600 font-bold text-zinc-100 dark:bg-green-300 dark:text-zinc-800 md:h-10"
                                 onClick={() => fetchNextPage()}
                             >
                                 Show more

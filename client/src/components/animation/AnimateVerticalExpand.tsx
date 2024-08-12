@@ -18,7 +18,7 @@ export default function AnimateVerticalExpand(props: Props) {
             transition={{duration: isAnimationsEnabled ? 0.3 : 0, delay: isAnimationsEnabled ? 0.1 : 0}}
             animate={{ gridTemplateRows: ["0fr", "1fr"] }}
             exit={{ gridTemplateRows: ["1fr", "0fr"] }}
-            className={`grid relative ${props.className ? props.className : ""}`}
+            className={`relative grid ${props.className ? props.className : ""}`}
             onAnimationStart={() => setInAnimation(true)}
             onAnimationComplete={() => setInAnimation(false)}
         >

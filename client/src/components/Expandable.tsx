@@ -14,7 +14,7 @@ export default function Expandable(props: Props) {
             <span>
                 <span>{props.content.slice(0, 200).trimEnd()}... </span>
                 <span
-                    className="font-bold cursor-pointer text-emerald-600 dark:text-green-400"
+                    className="cursor-pointer font-bold text-emerald-600 dark:text-green-400"
                     onClick={() => setIsExpanded(true)}
                 >
                     Expand
@@ -28,7 +28,7 @@ export default function Expandable(props: Props) {
             <span>
                 <span>{props.content} </span>
                 <span
-                    className="font-bold cursor-pointer text-emerald-600 dark:text-green-400"
+                    className="cursor-pointer font-bold text-emerald-600 dark:text-green-400"
                     onClick={() => setIsExpanded(false)}
                 >
                     Hide 

@@ -3,7 +3,7 @@ import CommentEditor from "@/components/CommentEditor.tsx"
 import ViewportCoverage from "@/components/ViewportCoverage.tsx"
 import Organize from "@/components/Organize.tsx"
 import D, { Nullable } from "@/definitions.ts"
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { HTTPError } from "ky"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import * as api from "@/api.ts"
@@ -12,7 +12,7 @@ import AnimateSlideIn from "@/components/animation/AnimateSlideIn.tsx"
 import ErrorMessage from "@/components/ErrorFallback.tsx"
 import { useContext } from "react"
 import { settingContext } from "@/App"
-import AnimateVerticalExpand from "./animation/AnimateVerticalExpand"
+import AnimateVerticalExpand from "@/components/animation/AnimateVerticalExpand"
 
 type Props = {
     postId: number
@@ -104,14 +104,26 @@ export default function CommentSection(props: Props) {
                 ratio={0.95}
                 onChange={(value) => setIsShortcutShown(value)}
             />
-            {isShortcutShown && (
-                <div
-                    className="p-2 md:p-4 cursor-pointer font-light rounded-xl fixed bottom-4 md:bottom-10 right-5 bg-normal-color md:right-20 shadow-zinc-300 dark:shadow-zinc-700 transition-shadow duration-300 shadow-2xl"
-                    onClick={scrollToPost}
-                >
-                    Go to post
-                </div>
-            )}
+            <AnimatePresence>
+                {isShortcutShown && (
+                    <motion.div
+                        initial={{
+                            bottom: "-4rem"
+                        }}
+                        animate={{
+                            bottom: "2rem"
+                        }}
+                        exit={{
+                            bottom: "-4rem"
+                        }}
+                        transition={{duration: 0.3}}
+                        className="fixed right-5 cursor-pointer rounded-xl border border-zinc-400 bg-zinc-100 p-2 font-light dark:border-zinc-700 dark:bg-zinc-900 md:right-20 md:p-4"
+                        onClick={scrollToPost}
+                    >
+                        Go to post
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {(comments.length > 1 || search !== "") && (
                 <div className="px-6 md:px-10">
                     <Organize
@@ -134,13 +146,13 @@ export default function CommentSection(props: Props) {
                             />
                         </AnimateSlideIn>
                         {i !== comments.length - 1 && (
-                            <hr className="border-zinc-300 dark:border-zinc-800 transition-colors duration-300" />
+                            <hr className="border-zinc-300 transition-colors duration-300 dark:border-zinc-800" />
                         )}
                     </motion.div>
                 ))}
                 {hasNextPage && (
                     <div
-                        className="cursor-pointer bg-emerald-600 mt-4 dark:bg-green-300 font-bold h-8 md:h-10 rounded-xl text-zinc-100 dark:text-zinc-800 flex items-center justify-center"
+                        className="mt-4 flex h-8 cursor-pointer items-center justify-center rounded-xl bg-emerald-600 font-bold text-zinc-100 dark:bg-green-300 dark:text-zinc-800 md:h-10"
                         onClick={() => fetchNextPage()}
                     >
                         Show more

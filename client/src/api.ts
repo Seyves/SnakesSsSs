@@ -1,5 +1,5 @@
 import ky from "ky"
-import D from "./definitions"
+import D from "@/definitions"
 
 const serverUrl = import.meta.env.VITE_SERVER_URL
 

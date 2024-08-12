@@ -1,5 +1,4 @@
-import { scheduler } from "timers/promises"
-import D, { Nullable } from "./definitions"
+import D, { Nullable } from "@/definitions"
 
 export function throttle<P extends any[]>(
     callback: (...props: P) => any,

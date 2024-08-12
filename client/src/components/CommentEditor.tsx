@@ -44,7 +44,7 @@ export default forwardRef(function CommentEditor(
         })
     }
     return (
-        <div className="py-4 md:pb-6 md:pt-2 px-6 md:px-10">
+        <div className="px-6 py-4 md:px-10 md:pb-6 md:pt-2">
             {props.replyTarget && (
                 <div className="mb-2">
                     <ReplyLink
@@ -61,7 +61,7 @@ export default forwardRef(function CommentEditor(
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     ref={ref}
-                    className="grow bg-transparent bg-zinc-200 dark:bg-zinc-800 outline-none resize-none rounded-md h-8 md:h-10 p-1 md-p-2 mr-4 transition-colors duration-300"
+                    className="md-p-2 mr-4 h-8 grow resize-none rounded-md bg-transparent bg-zinc-200 p-1 outline-none transition-colors duration-300 dark:bg-zinc-800 md:h-10"
                 ></textarea>
                 <Button>{isPending ? <Spinner /> : "SsSssend"}</Button>
             </form>

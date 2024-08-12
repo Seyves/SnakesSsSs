@@ -7,7 +7,7 @@ import {
     setStorageTheme,
 } from "@/functions.ts"
 import Feed from "@/components/Feed.tsx"
-import Header from "./components/Header"
+import Header from "@/components/Header"
 
 type Settings = {
     isAnimationsEnabled: boolean
@@ -51,9 +51,9 @@ export default function App() {
 
     return (
         <settingContext.Provider value={{ isAnimationsEnabled }}>
-            <div className="px-2 sm:px-20 md:px-40 lg:px-60 xl:px-[20rem] 2xl:px-[30rem] text-sm md:text-base">
+            <div className="px-2 text-sm sm:px-20 md:px-40 md:text-base lg:px-60 xl:px-[20rem] 2xl:px-[30rem]">
                 <div className="relative">
-                    <div className="flex pointer-events-none items-start justify-center absolute t-0 w-full h-full">
+                    <div className="t-0 pointer-events-none absolute flex h-full w-full items-start justify-center">
                         <Header
                             theme={theme}
                             toggleTheme={toggleTheme}

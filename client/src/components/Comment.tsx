@@ -44,22 +44,22 @@ export default function Comment(props: Props) {
     return (
         <div
             id={props.original ? `comment-${props.id}` : undefined}
-            className="p-2.5 pb-1.5 md:p-3 transition-colors duration-300"
+            className="p-2.5 pb-1.5 transition-colors duration-300 md:p-3"
         >
-            <div className="flex gap-1 items-center text-xs md:text-sm">
-                <h3 className="font-bold whitespace-nowrap text-sm md:text-base flex-shrink-0">
+            <div className="flex items-center gap-1 text-xs md:text-sm">
+                <h3 className="flex-shrink-0 whitespace-nowrap text-sm font-bold md:text-base">
                     Anon@{authorName}{" "}
                     {isMine && (
-                        <span className="text-emerald-600 dark:text-green-300 transition-colors duration-300">
+                        <span className="text-emerald-600 transition-colors duration-300 dark:text-green-300">
                             (you)
                         </span>
                     )}
                 </h3>
-                <span className="font-light ml-2 min-w-0 flex-1 text-ellipsis  whitespace-nowrap overflow-hidden">
+                <span className="ml-2 min-w-0 flex-1 overflow-hidden text-ellipsis  whitespace-nowrap font-light">
                     {dateStr}
                 </span>
             </div>
-            <div className="text-justify my-2">
+            <div className="my-2 text-justify">
                 {props.replyCommentAuthor && props.replyCommentId && (
                     <ReplyLink
                         reply={props.reply}
@@ -68,31 +68,31 @@ export default function Comment(props: Props) {
                         postId={props.postId}
                     />
                 )}
-                <div className="pr-4 max-h-96 overflow-y-auto whitespace-pre-wrap">
+                <div className="max-h-96 overflow-y-auto whitespace-pre-wrap pr-4">
                     <Expandable content={props.content} />
                 </div>
             </div>
             <div className="flex gap-6">
                 <div
                     title="Like"
-                    className="flex items-center p-1.5 md:p-2 cursor-pointer rounded-lg transition-all duration-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                    className="flex cursor-pointer items-center rounded-lg p-1.5 transition-all duration-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 md:p-2"
                     onClick={() => (props.isLiked ? unlike() : like())}
                 >
                     <LikeIcon
-                        className={`mr-3 w-4 h-4 md:w-5 md:h-5 ${props.isLiked ? "fill-red-500" : "fill-zinc-500"}`}
+                        className={`mr-3 h-4 w-4 md:h-5 md:w-5 ${props.isLiked ? "fill-red-500" : "fill-zinc-500"}`}
                     />
-                    <span className="text-zinc-500 text-sm">
+                    <span className="text-sm text-zinc-500">
                         {props.likesCount}
                     </span>
                 </div>
                 <div
                     title="Reply"
-                    className="flex items-center p-1 md:p-2 cursor-pointer rounded-lg transition-all duration-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                    className="flex cursor-pointer items-center rounded-lg p-1 transition-all duration-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 md:p-2"
                     onClick={() =>
                         props.reply({ id: props.id, author: props.author })
                     }
                 >
-                    <ReplyIcon className="w-5 h-3 md:w-6 md:h-4 stroke-zinc-500 cursor-pointer" />
+                    <ReplyIcon className="h-3 w-5 cursor-pointer stroke-zinc-500 md:h-4 md:w-6" />
                 </div>
             </div>
         </div>

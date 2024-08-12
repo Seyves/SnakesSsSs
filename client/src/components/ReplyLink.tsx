@@ -77,14 +77,14 @@ export default function ReplyLink(props: Props) {
 
     return (
         <div
-            className="relative flex reply"
+            className="reply relative flex"
             onMouseLeave={() => {
                 setIsShown(false)
             }}
             onClick={(e) => e.stopPropagation()}
         >
             <div
-                className="text-emerald-600 p-2 -mx-2 -mt-2 text-xs md:text-sm dark:text-green-300 cursor-pointer select-none transition-colors duration-300"
+                className="-mx-2 -mt-2 cursor-pointer select-none p-2 text-xs text-emerald-600 transition-colors duration-300 dark:text-green-300 md:text-sm"
                 onClick={() => {
                     if (isEnoughSpaceForPopup) {
                         setIsShown((prev) => !prev)
@@ -104,10 +104,10 @@ export default function ReplyLink(props: Props) {
                     >
                         <div
                             ref={onPopupAppear}
-                            className="min-w-[400px] p-2 box-content absolute "
+                            className="absolute box-content min-w-[400px] p-2 "
                         >
                             <div
-                                className={`popup rounded-xl border p-1 bg-zinc-100 dark:bg-zinc-900 border-zinc-400 dark:border-zinc-600 transition-colors duration-300`}
+                                className={`popup rounded-xl border border-zinc-400 bg-zinc-100 p-1 transition-colors duration-300 dark:border-zinc-600 dark:bg-zinc-900`}
                             >
                                 <Comment
                                     {...comment}

@@ -8,7 +8,7 @@ type Props = {
 export default function ErrorFallback(props: Props) {
     return (
         <div>
-            <div className="p-2 font-bold text-red-500 flex items-center text-center flex-col justify-center">
+            <div className="flex flex-col items-center justify-center p-2 text-center font-bold text-red-500">
                 <p>Oops, an error has occured :(</p>
                 <div>
                     {props.error instanceof HTTPError ? (
