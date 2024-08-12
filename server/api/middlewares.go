@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -12,6 +13,22 @@ import (
 
 func MainMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestUUID, err := uuid.NewV4()
+
+		if err != nil {
+            errReq := RequestError{
+                RequestId: "ungenerated",
+                error:     errors.New("Internal server error"),
+                cause:     err,
+                Code:      500,
+            }
+			requestLog("ungenerated", fmt.Sprintf("Request id generation failed for request, path: %s, body: %s", r.URL, r.Body))
+            fail(w, errReq)
+		}
+
+        requestLog(requestUUID.String(), fmt.Sprintf("Incoming request, method: %s, path: %s, body: %s", r.Method, r.URL, r.Body))
+
+		w.Header().Add("X-Request-ID", requestUUID.String())
 		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "*")
@@ -23,7 +40,7 @@ func MainMiddleware(h http.Handler) http.Handler {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(8*time.Second))
+		ctx, cancel := context.WithTimeout(context.WithValue(r.Context(), "requestId", requestUUID.String()), time.Duration(8*time.Second))
 
 		defer cancel()
 
@@ -33,10 +50,18 @@ func MainMiddleware(h http.Handler) http.Handler {
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestId := r.Context().Value("requestId").(string)
+
 		tokenStr := r.Header.Get("Authorization")
 
 		if tokenStr == "" {
-			sendError(w, 401, "No token provided")
+            errReq := RequestError{
+                RequestId: requestId,
+                error:     errors.New("No token provided"),
+                cause:     errors.New("Unauthorized"),
+                Code:      401,
+            }
+			fail(w, errReq)
 			return
 		}
 
@@ -51,21 +76,39 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
-            sendError(w, 401, err.Error())
+            errReq := RequestError{
+                RequestId: requestId,
+                error:     errors.New("Invalid token"),
+                cause:     err,
+                Code:      401,
+            }
+			fail(w, errReq)
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 
 		if !ok {
-            sendError(w, 401, "Invalid token")
+            errReq := RequestError{
+                RequestId: "ungenerated",
+                error:     errors.New("Invalid token"),
+                cause:     errors.New("Unauthorized"),
+                Code:      401,
+            }
+			fail(w, errReq)
 			return
 		}
 
 		author, err := uuid.FromString(claims["uuid"].(string))
 
 		if err != nil {
-            sendError(w, 401, "Invalid token")
+            errReq := RequestError{
+                RequestId: requestId,
+                error:     errors.New("Invalid token"),
+                cause:     errors.New("Unauthorized"),
+                Code:      401,
+            }
+			fail(w, errReq)
 			return
 		}
 

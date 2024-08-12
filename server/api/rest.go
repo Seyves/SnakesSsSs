@@ -5,6 +5,9 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/netip"
@@ -24,23 +27,46 @@ const commentsPerLoad = 15
 
 var jwtKey, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 
-type Reply struct {
-	Id     int32
-	Author uuid.UUID
+type RequestError struct {
+	RequestId string
+	error     error // Error that client see
+	cause     error // What caused error, invalid DB request for example
+	Code      int
 }
 
-func sendError(w http.ResponseWriter, code int, message string) {
-	w.WriteHeader(code)
-	w.Write([]byte(`{"error":"` + message + `"}`))
+func (e *RequestError) Error() string {
+	return e.error.Error()
+}
+
+func (e *RequestError) Unwrap() error {
+	return e.cause
+}
+
+func requestLog(requestId string, str string) {
+	log.Println(fmt.Sprintf("[%s] %s", requestId, str))
+}
+
+func fail(w http.ResponseWriter, err RequestError) {
+	requestLog(err.RequestId, fmt.Sprintf(
+		"Request failed, status: %d, message: %s, cause: %s",
+		err.Code,
+		err.Error(),
+		err.Unwrap().Error(),
+	))
+	w.WriteHeader(err.Code)
+	w.Write([]byte(`{"error":"` + err.Error() + `"}`))
 	return
 }
 
-type AuthResponse struct {
-	Token string `json:"token"`
-	Uuid  string `json:"uuid"`
-}
-
 func Auth(w http.ResponseWriter, r *http.Request) {
+	type AuthResp struct {
+		Token string `json:"token"`
+		Uuid  string `json:"uuid"`
+	}
+
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched Auth route"))
+
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 
 	if err != nil {
@@ -50,14 +76,26 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 	ipnet, err := netip.ParseAddr(ip)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Parsing ip address failed"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
 	author, err := db.Query.Auth(r.Context(), ipnet)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -70,30 +108,46 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 	sign, err := token.SignedString(jwtKey)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Parsing ip address failed"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	resp := AuthResponse{
+	resp := AuthResp{
 		Token: sign,
 		Uuid:  author.ID.String(),
 	}
 
-	rawResp, err := json.Marshal(resp)
+	marshResp, err := json.Marshal(resp)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.Write(rawResp)
+	w.Write(marshResp)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d, response: %s", 200, marshResp))
 }
 
 func GetPosts(w http.ResponseWriter, r *http.Request) {
-	type Resp struct {
+	type GetPostsResp struct {
 		NextOffset *int               `json:"nextOffset"`
 		Posts      []sqlc.GetPostsRow `json:"posts"`
 	}
+
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched GetPosts route"))
 
 	author := r.Context().Value("author").(uuid.UUID)
 
@@ -108,7 +162,13 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		offset = int32(offset64)
 
 		if err != nil {
-			sendError(w, 400, "Offset is not a number")
+			errReq := RequestError{
+				RequestId: requestId,
+				error:     errors.New("'offset' is not a number"),
+				cause:     errors.New("Bad request"),
+				Code:      400,
+			}
+			fail(w, errReq)
 			return
 		}
 	}
@@ -132,14 +192,20 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		Author:   author,
 		Offset:   offset,
 		Limit:    postsPerLoad,
-        Search:   search,
+		Search:   search,
 		DateAsc:  dateAsc,
 		DateDesc: dateDesc,
 		TopAsc:   topAsc,
 	})
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -150,7 +216,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		nextOffset = &temp
 	}
 
-	resp := Resp{
+	resp := GetPostsResp{
 		NextOffset: nextOffset,
 		Posts:      posts,
 	}
@@ -159,32 +225,64 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 		resp.Posts = make([]sqlc.GetPostsRow, 0)
 	}
 
-	marsh, err := json.Marshal(resp)
+	marshResp, err := json.Marshal(resp)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.Write(marsh)
-}
-
-type CreatePostRequest struct {
-	Content string `json:"content"`
+	w.Write(marshResp)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d, response: %s", 200, marshResp))
 }
 
 func CreatePost(w http.ResponseWriter, r *http.Request) {
-	var post CreatePostRequest
+	type CreatePostReq struct {
+		Content string `json:"content"`
+	}
+	//Copied some of the sqlc fields, because embedded struct will not be flattened in json
+	type CreatePostResp struct {
+		ID            int32              `json:"id"`
+		Author        uuid.UUID          `json:"author"`
+		CreatedAt     pgtype.Timestamptz `json:"createdAt"`
+		Content       string             `json:"content"`
+		LikesCount    int                `json:"likesCount"`
+		CommentsCount int                `json:"commentsCount"`
+		IsLiked       bool               `json:"isLiked"`
+	}
+
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched CreatePost route"))
+
+	var post CreatePostReq
 
 	err := json.NewDecoder(r.Body).Decode(&post)
 
 	if err != nil {
-		sendError(w, 404, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Body is invalid"),
+			cause:     err,
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
 	if post.Content == "" {
-		sendError(w, 404, "Content cannot be empty")
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'content' is empty"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -198,27 +296,59 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	createdPost, err := db.Query.CreatePost(r.Context(), params)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	marh, err := json.Marshal(createdPost)
+	filled := CreatePostResp{
+		ID:            createdPost.ID,
+		Author:        createdPost.Author,
+		CreatedAt:     createdPost.CreatedAt,
+		Content:       createdPost.Content,
+		LikesCount:    0,
+		CommentsCount: 0,
+		IsLiked:       false,
+	}
+
+	marshResp, err := json.Marshal(filled)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.Write(marh)
+	w.Write(marshResp)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d, response: %s", 200, marshResp))
 }
 
 func DeletePost(w http.ResponseWriter, r *http.Request) {
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched DeletePost route"))
+
 	postIdStr := chi.URLParam(r, "postId")
 
 	postId, err := strconv.Atoi(postIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'postId' is not a number"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -227,28 +357,52 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 	postAuthor, err := db.Query.GetPostAuthor(r.Context(), int32(postId))
 
 	if postAuthor != author {
-		sendError(w, 403, "Forbidden")
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Forbidden"),
+			cause:     errors.New("Forbidden"),
+			Code:      403,
+		}
+		fail(w, errReq)
 		return
 	}
 
 	err = db.Query.DeletePost(r.Context(), int32(postId))
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.WriteHeader(204)
+	requestLog(requestId, "Request succesful")
+
+	code := 204
+	w.WriteHeader(code)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d", code))
 }
 
 func LikePost(w http.ResponseWriter, r *http.Request) {
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched LikePost route"))
+
 	postIdStr := chi.URLParam(r, "postId")
 
 	postId, err := strconv.Atoi(postIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
-		w.WriteHeader(500)
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'postId' is not a number"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -262,20 +416,37 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Query.LikePost(r.Context(), params)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.WriteHeader(204)
+	code := 204
+	w.WriteHeader(code)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d", code))
 }
 
 func UnlikePost(w http.ResponseWriter, r *http.Request) {
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched UnlikePost route"))
+
 	postIdStr := chi.URLParam(r, "postId")
 
 	postId, err := strconv.Atoi(postIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'postId' is not a number"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -289,27 +460,42 @@ func UnlikePost(w http.ResponseWriter, r *http.Request) {
 	err = db.Query.UnlikePost(r.Context(), params)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.WriteHeader(204)
+	code := 204
+	w.WriteHeader(code)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d", code))
 }
 
 func GetComments(w http.ResponseWriter, r *http.Request) {
-    // sendError(w, 500, "no :)")
-    // return
-	type Resp struct {
+	type GetCommentsResp struct {
 		NextOffset *int                  `json:"nextOffset"`
 		Comments   []sqlc.GetCommentsRow `json:"comments"`
 	}
+
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched GetComments route"))
 
 	postIdStr := chi.URLParam(r, "postId")
 
 	postId, err := strconv.Atoi(postIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'postId' is not a number"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -326,7 +512,13 @@ func GetComments(w http.ResponseWriter, r *http.Request) {
 		offset = int32(offset64)
 
 		if err != nil {
-			sendError(w, 400, "Offset is not a number")
+			errReq := RequestError{
+				RequestId: requestId,
+				error:     errors.New("'offset' is not a number"),
+				cause:     errors.New("Bad request"),
+				Code:      400,
+			}
+			fail(w, errReq)
 			return
 		}
 	}
@@ -351,7 +543,7 @@ func GetComments(w http.ResponseWriter, r *http.Request) {
 		Author:   author,
 		Offset:   offset,
 		Limit:    commentsPerLoad,
-        Search:   search,
+		Search:   search,
 		DateAsc:  dateAsc,
 		DateDesc: dateDesc,
 		TopAsc:   topAsc,
@@ -360,7 +552,13 @@ func GetComments(w http.ResponseWriter, r *http.Request) {
 	comments, err := db.Query.GetComments(r.Context(), params)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server errro"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -371,7 +569,7 @@ func GetComments(w http.ResponseWriter, r *http.Request) {
 		nextOffset = &temp
 	}
 
-	resp := Resp{
+	resp := GetCommentsResp{
 		NextOffset: nextOffset,
 		Comments:   comments,
 	}
@@ -380,24 +578,40 @@ func GetComments(w http.ResponseWriter, r *http.Request) {
 		resp.Comments = make([]sqlc.GetCommentsRow, 0)
 	}
 
-	marsh, err := json.Marshal(resp)
+	marshResp, err := json.Marshal(resp)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server errro"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.Write(marsh)
+	w.Write(marshResp)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d, response: %s", 200, marshResp))
 }
 
 func GetComment(w http.ResponseWriter, r *http.Request) {
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched GetComment route"))
+
 	author := r.Context().Value("author").(uuid.UUID)
 	commentIdStr := chi.URLParam(r, "commentId")
 
 	commentId, err := strconv.Atoi(commentIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'commentId' is not a number"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -407,52 +621,97 @@ func GetComment(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	marsh, err := json.Marshal(comment)
+	marshResp, err := json.Marshal(comment)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.Write(marsh)
-}
-
-type CreateCommentRequest struct {
-	Content string `json:"content"`
-	Reply   int32
+	w.Write(marshResp)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d, response: %s", 200, marshResp))
 }
 
 func CreateComment(w http.ResponseWriter, r *http.Request) {
+	type CreateCommentReq struct {
+		Content string `json:"content"`
+		Reply   int32
+	}
+	// Same reason as in the CreatePostResp
+	type CreateCommentResp struct {
+		ID         int32              `json:"id"`
+		Post       int32              `json:"post"`
+		Author     uuid.UUID          `json:"author"`
+		Reply      pgtype.Int4        `json:"reply"`
+		Content    string             `json:"content"`
+		CreatedAt  pgtype.Timestamptz `json:"createdAt"`
+		LikesCount int                `json:"likesCount"`
+		IsLiked    bool               `json:"isLiked"`
+	}
+
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched CreateComment route"))
+
 	postIdStr := chi.URLParam(r, "postId")
 
 	postId, err := strconv.Atoi(postIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'postId' is not a number"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	var comment CreateCommentRequest
+	var comment CreateCommentReq
 
 	err = json.NewDecoder(r.Body).Decode(&comment)
 
 	if err != nil {
-		sendError(w, 404, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Invalid body"),
+			cause:     err,
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
 	if comment.Content == "" {
-		sendError(w, 404, "Content cannot be empty")
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'content' is empty"),
+			cause:     err,
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
 	uuid := r.Context().Value("author").(uuid.UUID)
 
-	var created sqlc.Comment
+	var createdComment sqlc.Comment
 
 	if comment.Reply == 0 {
 		params := sqlc.CreateCommentParams{
@@ -461,7 +720,7 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 			Content: comment.Content,
 		}
 
-		created, err = db.Query.CreateComment(r.Context(), params)
+		createdComment, err = db.Query.CreateComment(r.Context(), params)
 	} else {
 		params := sqlc.CreateCommentWithReplyParams{
 			Post:    int32(postId),
@@ -473,32 +732,64 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 
-		created, err = db.Query.CreateCommentWithReply(r.Context(), params)
+		createdComment, err = db.Query.CreateCommentWithReply(r.Context(), params)
 	}
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	marh, err := json.Marshal(created)
+	filled := CreateCommentResp{
+		ID:         createdComment.ID,
+		Post:       createdComment.Post,
+		Author:     createdComment.Author,
+		Reply:      createdComment.Reply,
+		Content:    createdComment.Content,
+		CreatedAt:  createdComment.CreatedAt,
+		LikesCount: 0,
+		IsLiked:    false,
+	}
+
+	marshResp, err := json.Marshal(filled)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.Write(marh)
+	w.Write(marshResp)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d, response: %s", 200, marshResp))
 }
 
 func LikeComment(w http.ResponseWriter, r *http.Request) {
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched LikeComment route"))
+
 	commentIdStr := chi.URLParam(r, "commentId")
 
 	commentId, err := strconv.Atoi(commentIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
-		w.WriteHeader(500)
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'commentId' is not a number"),
+			cause:     err,
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -512,20 +803,37 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Query.LikeComment(r.Context(), params)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.WriteHeader(204)
+	code := 204
+	w.WriteHeader(code)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d", 200))
 }
 
 func UnlikeComment(w http.ResponseWriter, r *http.Request) {
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched UnlikeComment route"))
+
 	commentIdStr := chi.URLParam(r, "commentId")
 
 	commentId, err := strconv.Atoi(commentIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'commentId' is not a number"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -539,20 +847,37 @@ func UnlikeComment(w http.ResponseWriter, r *http.Request) {
 	err = db.Query.UnlikeComment(r.Context(), params)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.WriteHeader(204)
+	code := 204
+	w.WriteHeader(code)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d", 200))
 }
 
 func DeleteComment(w http.ResponseWriter, r *http.Request) {
+	requestId := r.Context().Value("requestId").(string)
+	requestLog(requestId, fmt.Sprintf("Request matched DeleteComment route"))
+
 	commentIdStr := chi.URLParam(r, "commentId")
 
 	commentId, err := strconv.Atoi(commentIdStr)
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("'commentId' is not a number"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
 		return
 	}
 
@@ -561,16 +886,45 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 	commentAuthor, err := db.Query.GetCommentAuthor(r.Context(), int32(commentId))
 
 	if commentAuthor != author {
-		sendError(w, 403, "Forbidden")
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
 	err = db.Query.DeleteComment(r.Context(), int32(commentId))
 
 	if err != nil {
-		sendError(w, 500, err.Error())
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("Internal server error"),
+			cause:     err,
+			Code:      500,
+		}
+		fail(w, errReq)
 		return
 	}
 
-	w.WriteHeader(204)
+	code := 204
+	w.WriteHeader(code)
+	requestLog(requestId, fmt.Sprintf("Request successful, code: %d", 200))
+}
+
+func NotFound(w http.ResponseWriter, r *http.Request) {
+	requestId := r.Context().Value("requestId").(string)
+
+	requestLog(requestId, "Request did not matched any route")
+
+	errReq := RequestError{
+		RequestId: requestId,
+		error:     errors.New("Resource not found"),
+		cause:     errors.New("Resource not found"),
+		Code:      404,
+	}
+
+	fail(w, errReq)
 }

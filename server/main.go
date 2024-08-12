@@ -1,21 +1,31 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"snakesss/api"
 	"snakesss/db"
 
 	"github.com/go-chi/chi/v5"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func main() {
 	r := chi.NewRouter()
 
+    log.SetOutput(&lumberjack.Logger{
+        Filename:   "./log/log.log",
+        MaxSize:    500, // megabytes
+        MaxBackups: 3,
+        MaxAge:     28, //days
+        Compress:   true, // disabled by default
+    })
+
 	db.ConnectDB()
 
 	r.Use(api.MainMiddleware)
 
-	r.Post("/auth", api.Auth)
+    r.Post("/auth", api.Auth)
 
 	r.Route("/", func(r chi.Router) {
 		r.Use(api.AuthMiddleware)
@@ -37,6 +47,8 @@ func main() {
 			r.Delete("/like", api.UnlikeComment)
 		})
 	})
+
+    r.NotFound(api.NotFound)
 
 	http.ListenAndServe(":3000", r)
 }

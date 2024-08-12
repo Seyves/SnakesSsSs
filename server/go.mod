@@ -19,4 +19,5 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
