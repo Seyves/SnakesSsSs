@@ -68,7 +68,7 @@ export default function Post(props: D.Post) {
                         {dateStr}
                     </span>
                 </div>
-                <p className="my-2 whitespace-pre-wrap md:my-4">
+                <p className="my-2 text-justify whitespace-pre-wrap md:my-4">
                     {props.content}
                 </p>
                 <div className="flex gap-8">
