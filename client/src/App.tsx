@@ -7,6 +7,8 @@ import {
     setStorageTheme,
 } from "@/functions.ts"
 import Feed from "@/components/Feed.tsx"
+import { ErrorBoundary } from "react-error-boundary"
+import ErrorFallback from "@/components/ErrorFallback"
 import Header from "@/components/Header"
 
 type Settings = {
@@ -59,7 +61,9 @@ export default function App() {
                         />
                     </div>
                     <div className="pt-64 md:pt-[21rem]">
-                        <Feed />
+                        <ErrorBoundary FallbackComponent={ErrorFallback}>
+                            <Feed />
+                        </ErrorBoundary>
                     </div>
                 </div>
             </div>
