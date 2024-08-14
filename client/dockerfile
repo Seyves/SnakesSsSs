@@ -1,0 +1,15 @@
+FROM node:18-alpine
+
+WORKDIR /client
+
+EXPOSE 80
+
+COPY package.json ./
+
+RUN npm install
+
+COPY . ./
+
+RUN npm run build
+
+CMD [ "npm", "run", "preview" ]

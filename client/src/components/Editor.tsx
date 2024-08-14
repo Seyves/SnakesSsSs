@@ -22,9 +22,16 @@ export default function Editor() {
         createPost(content)
     }
 
+    function submitOnEnter(e: React.KeyboardEvent) {
+        if (!e.shiftKey && e.key === "Enter") {
+            onSubmit(e)
+        }
+    }
+
     return (
         <form onSubmit={onSubmit} className="px-4">
             <textarea
+                onKeyDown={submitOnEnter}
                 placeholder="Tell us ssSSssomething..."
                 onChange={(e) => setContent(e.target.value)}
                 value={content}

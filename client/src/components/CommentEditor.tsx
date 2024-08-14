@@ -43,6 +43,13 @@ export default forwardRef(function CommentEditor(
             reply: props.replyTarget?.id,
         })
     }
+
+    function submitOnEnter(e: React.KeyboardEvent) {
+        if (!e.shiftKey && e.key === "Enter") {
+            onSubmit(e)
+        }
+    }
+
     return (
         <div className="px-6 py-4 md:px-10 md:pb-6 md:pt-2">
             {props.replyTarget && (
@@ -57,11 +64,12 @@ export default forwardRef(function CommentEditor(
             )}
             <form className="flex " onSubmit={onSubmit}>
                 <textarea
+                    onKeyDown={submitOnEnter}
                     placeholder="I think..."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     ref={ref}
-                    className="md-p-2 mr-4 h-8 grow resize-none rounded-md bg-transparent bg-zinc-200 p-1 outline-none transition-colors duration-300 dark:bg-zinc-800 md:h-10"
+                    className="md-p-2 mr-4 h-8 grow resize-none rounded-md bg-transparent bg-zinc-200 p-1 outline-none transition-colors duration-300 dark:bg-zinc-800 md:h-10 md:p-2"
                 ></textarea>
                 <Button>{isPending ? <Spinner /> : "SsSssend"}</Button>
             </form>

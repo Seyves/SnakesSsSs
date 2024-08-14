@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -26,14 +27,14 @@ func MainMiddleware(h http.Handler) http.Handler {
             fail(w, errReq)
 		}
 
-        requestLog(requestUUID.String(), fmt.Sprintf("Incoming request, method: %s, path: %s, body: %s", r.Method, r.URL, r.Body))
+        requestLog(requestUUID.String(), fmt.Sprintf("Incoming request, method: %s, path: %s, headers: %s, body: %s", r.Method, r.URL, r.Header, r.Body))
 
 		w.Header().Add("X-Request-ID", requestUUID.String())
 		w.Header().Add("Content-Type", "application/json")
-		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Origin", os.Getenv("HOST"))
 		w.Header().Set("Access-Control-Allow-Methods", "*")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(200)

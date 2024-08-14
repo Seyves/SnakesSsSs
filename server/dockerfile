@@ -1,0 +1,12 @@
+FROM golang:1.21
+
+WORKDIR /server
+
+COPY . . 
+
+RUN go get
+RUN go build -o /build
+
+EXPOSE 3000
+
+ENTRYPOINT [ "/build" ]

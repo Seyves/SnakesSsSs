@@ -1,8 +1,6 @@
 import ky from "ky"
 import D from "@/definitions"
 
-const serverUrl = import.meta.env.VITE_SERVER_URL
-
 export let token = ""
 export let uuid = ""
 export let client = ky.create({})
@@ -99,7 +97,7 @@ type AuthResp = {
 }
 
 export async function createAPI() {
-    const resp = await client.post(`${serverUrl}/auth`)
+    const resp = await client.post(`api/auth`)
 
     const json = await resp.json<AuthResp>()
 
@@ -109,7 +107,7 @@ export async function createAPI() {
     client = ky.create({
         retry: 0,
         throwHttpErrors: true,
-        prefixUrl: serverUrl,
+        prefixUrl: "/api",
         headers: {
             Authorization: token,
         },

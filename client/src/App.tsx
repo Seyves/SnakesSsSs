@@ -24,6 +24,8 @@ export default function App() {
     )
 
     useEffect(() => {
+        setStorageTheme(theme)
+
         const html = document.querySelector("html")
 
         if (html) {
@@ -33,12 +35,7 @@ export default function App() {
 
     function toggleTheme() {
         setTheme((prev) => {
-            let newTheme =
-                prev === D.THEMES.DARK ? D.THEMES.LIGHT : D.THEMES.DARK
-
-            setStorageTheme(newTheme)
-
-            return newTheme
+            return prev === D.THEMES.DARK ? D.THEMES.LIGHT : D.THEMES.DARK
         })
     }
 

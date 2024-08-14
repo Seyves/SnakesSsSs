@@ -1,0 +1,55 @@
+version: "3.4"
+networks: 
+  net:
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}      
+      PGDATA: /data/postgres
+    volumes:
+      - ./server/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - net
+  nginx: 
+    image: nginx:stable-alpine
+    ports:
+      - '80:80'
+    volumes: 
+      - './nginx.conf:/etc/nginx/nginx.conf'
+    depends_on:
+      snakesclient:
+        condition: service_started
+      snakesserver:
+        condition: service_started
+    networks:
+      - net
+  snakesclient:
+    build: ./client
+    container_name: snakesclient
+    restart: always
+    environment: 
+      VITE_API_URL: http://snakesserver:3000
+      VITE_PORT: "80"
+    networks:
+      - net
+  snakesserver:
+    build: ./server
+    container_name: snakesserver
+    restart: always
+    environment: 
+      HOST: ${HOST}
+      POSTGRES_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+    networks:
+      - net
+
+volumes:
+  snakesserver:
+  snakesclient:
+  postgres:
+

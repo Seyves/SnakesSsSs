@@ -18,11 +18,11 @@ export function debounce<P extends any[]>(
     callback: (...props: P) => any,
     timeout: number,
 ) {
-    let scheduled = Infinity
+    let scheduled: number 
 
     return function (...props: P) {
         clearTimeout(scheduled)
-        scheduled = setTimeout(() => callback(...props), timeout)
+        scheduled = setTimeout(() => callback(...props), timeout) as unknown as number
     }
 }
 

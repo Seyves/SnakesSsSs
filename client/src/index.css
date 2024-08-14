@@ -24,12 +24,6 @@ html {
     font-weight: light;
 }
 
-@font-face {
-    font-family: "SFProDisplay";
-    src: url("./assets/fonts/SF-Pro-Display-Bold.otf") format("otf");
-    font-weight: bold;
-}
-
 @layer base {
     html {
         font-family: "SFProText", system-ui, sans-serif;

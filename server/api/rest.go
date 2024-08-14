@@ -8,8 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
-	"net/http"
+    "net/http"
 	"net/netip"
 	"snakesss/db"
 	"snakesss/sqlc"
@@ -67,9 +66,16 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 	requestId := r.Context().Value("requestId").(string)
 	requestLog(requestId, fmt.Sprintf("Request matched Auth route"))
 
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+    ip := r.Header.Get("X-Real-Ip") // Client ip from proxy
 
-	if err != nil {
+	if ip == "" {
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New("No remove ip found"),
+			cause:     errors.New("Proxy did not provided 'X-Real-Ip header'"),
+			Code:      500,
+		}
+        fail(w, errReq)
 		return
 	}
 

@@ -25,6 +25,8 @@ CREATE TABLE comment (
   created_at timestamptz DEFAULT now () NOT NULL
 );
 
+CREATE INDEX idx_comment_post ON comment (post);
+
 CREATE TABLE comment_like (
   author uuid REFERENCES author (id) NOT NULL,
   comment integer REFERENCES comment (id) ON DELETE CASCADE NOT NULL,

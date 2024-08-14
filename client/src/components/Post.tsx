@@ -73,13 +73,13 @@ export default function Post(props: D.Post) {
                 </p>
                 <div className="flex gap-8">
                     <div
-                        className="flex cursor-pointer select-none items-center justify-between rounded-xl px-2 py-2 transition-all duration-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                        className="flex cursor-pointer select-none items-center justify-between rounded-xl px-2 py-2 text-zinc-500 transition-all duration-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                         onClick={() => (props.isLiked ? unlike() : like())}
                     >
                         <LikeIcon
                             className={`h-5 w-5 ${props.isLiked ? "fill-red-500" : "fill-zinc-500"}`}
                         />
-                        <span className="ml-4 text-zinc-500">
+                        <span className="ml-4 ">
                             {props.likesCount}
                         </span>
                     </div>

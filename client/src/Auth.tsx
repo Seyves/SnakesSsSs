@@ -1,20 +1,19 @@
-import { useEffect, useState } from "react"
 import { createAPI } from "@/api"
 import App from "@/App"
+import { useMutation } from "@tanstack/react-query"
+import { useEffect } from "react"
 
 export default function Auth() {
-    const [isL, setIsL] = useState(false)
-
-    async function auth() {
-        await createAPI()
-        setIsL(true)
-    }
+    const { isSuccess, mutate } = useMutation({
+        mutationKey: ["auth"],
+        mutationFn: createAPI,
+    })
 
     useEffect(() => {
-        auth()
+        mutate()
     }, [])
 
-    if (isL) return <App />
+    if (isSuccess) return <App />
 
     return <></>
 }

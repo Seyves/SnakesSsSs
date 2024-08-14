@@ -49,7 +49,7 @@ export default function Header(props: Props) {
                     />
                 </a>
                 <div className="flex items-center gap-3">
-                    <p className="mb-1 font-light">Dark theme</p>
+                    <p className="mb-1 font-light">Dark mode</p>
                     <ToggleSwitch
                         checked={props.theme === D.THEMES.DARK}
                         toggle={props.toggleTheme}

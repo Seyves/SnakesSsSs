@@ -116,7 +116,7 @@ export default function CommentSection(props: Props) {
                         exit={{
                             bottom: "-4rem"
                         }}
-                        transition={{duration: 0.3}}
+                        transition={{duration: isAnimationsEnabled ? 0.3 : 0}}
                         className="fixed right-5 cursor-pointer rounded-xl border border-zinc-400 bg-zinc-100 p-2 font-light dark:border-zinc-700 dark:bg-zinc-900 md:right-20 md:p-4"
                         onClick={scrollToPost}
                     >
