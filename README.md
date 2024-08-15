@@ -1,7 +1,6 @@
-# snakesSsSs
-
 ![](https://github.com/Seyves/snakesssss/blob/master/snakes-logo.svg)
 
+# snakesSsSs
 snakesSsSs is a simple anonymous board
 
 # Deploy
