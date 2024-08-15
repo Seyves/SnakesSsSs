@@ -1,6 +1,6 @@
 # snakesSsSs
 
-![](https://github.com/Seyves/snakesssss/blob/master/logo.svg)
+![](https://github.com/Seyves/snakesssss/blob/master/snakes-logo.svg)
 
 snakesSsSs is a simple anonymous board
 
