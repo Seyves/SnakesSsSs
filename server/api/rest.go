@@ -8,11 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
-    "net/http"
+	"net/http"
 	"net/netip"
 	"snakesss/db"
 	"snakesss/sqlc"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -21,8 +22,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const maxRequestSizeInBytes = 1024 * 1024
+
 const postsPerLoad = 15
 const commentsPerLoad = 15
+const maxSymbolsForPost = 10000
+const maxSymbolsForComment = 10000
 
 var jwtKey, err = ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 
@@ -281,10 +286,19 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if post.Content == "" {
+	if len(post.Content) == 0 {
+		errReq := RequestError{
+            RequestId: requestId,
+			error:     errors.New("'content' is empty"),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
+		return
+	} else if len(post.Content) > maxSymbolsForPost {
 		errReq := RequestError{
 			RequestId: requestId,
-			error:     errors.New("'content' is empty"),
+			error:     errors.New(fmt.Sprintf("'content' max length is %d", maxSymbolsForPost)),
 			cause:     errors.New("Bad request"),
 			Code:      400,
 		}
@@ -296,7 +310,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	params := sqlc.CreatePostParams{
 		Author:  author,
-		Content: post.Content,
+		Content: strings.TrimSpace(post.Content),
 	}
 
 	createdPost, err := db.Query.CreatePost(r.Context(), params)
@@ -704,7 +718,7 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if comment.Content == "" {
+	if len(comment.Content) == 0 {
 		errReq := RequestError{
 			RequestId: requestId,
 			error:     errors.New("'content' is empty"),
@@ -713,7 +727,16 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 		}
 		fail(w, errReq)
 		return
-	}
+	} else if len(comment.Content) > maxSymbolsForPost {
+		errReq := RequestError{
+			RequestId: requestId,
+			error:     errors.New(fmt.Sprintf("'content' max length is %d", maxSymbolsForComment)),
+			cause:     errors.New("Bad request"),
+			Code:      400,
+		}
+		fail(w, errReq)
+        return
+    }
 
 	uuid := r.Context().Value("author").(uuid.UUID)
 
@@ -723,7 +746,7 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 		params := sqlc.CreateCommentParams{
 			Post:    int32(postId),
 			Author:  uuid,
-			Content: comment.Content,
+            Content: strings.TrimSpace(comment.Content),
 		}
 
 		createdComment, err = db.Query.CreateComment(r.Context(), params)

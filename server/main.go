@@ -23,6 +23,8 @@ func main() {
 
 	db.ConnectDB()
 
+    r.Use(api.LoggerMiddleware)
+    r.Use(api.RequestSizeMiddleware)
 	r.Use(api.MainMiddleware)
 
     r.Post("/auth", api.Auth)

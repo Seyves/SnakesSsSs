@@ -69,7 +69,7 @@ export default function Comment(props: Props) {
                     />
                 )}
                 <div className="max-h-96 overflow-y-auto whitespace-pre-wrap pr-4">
-                    <Expandable content={props.content} />
+                    <Expandable content={props.content}/>
                 </div>
             </div>
             <div className="flex gap-6">

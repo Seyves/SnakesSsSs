@@ -6,6 +6,8 @@ import Button from "@/components/Button"
 import Spinner from "@/components/Spinner"
 import ReplyLink from "@/components/ReplyLink.tsx"
 
+const MAX_SYMBOLS = 10000
+
 type Props = {
     postId: number
     replyTarget: Nullable<D.ReplyTarget>
@@ -50,6 +52,8 @@ export default forwardRef(function CommentEditor(
         }
     }
 
+    const isMaxSymbolsReached = content.length > MAX_SYMBOLS
+
     return (
         <div className="px-6 py-4 md:px-10 md:pb-6 md:pt-2">
             {props.replyTarget && (
@@ -71,8 +75,11 @@ export default forwardRef(function CommentEditor(
                     ref={ref}
                     className="md-p-2 mr-4 h-8 grow resize-none rounded-md bg-transparent bg-zinc-200 p-1 outline-none transition-colors duration-300 dark:bg-zinc-800 md:h-10 md:p-2"
                 ></textarea>
-                <Button>{isPending ? <Spinner /> : "SsSssend"}</Button>
+                <Button disabled={isMaxSymbolsReached}>{isPending ? <Spinner /> : "SsSssend"}</Button>
             </form>
+            {
+                isMaxSymbolsReached && <div className="mt-4 text-center text-xs font-bold text-red-500 md:text-sm">You have reached symbols limit (10000)</div>
+            }
         </div>
     )
 })

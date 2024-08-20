@@ -14,20 +14,20 @@ export async function getPosts(
     search: string,
     offset: number,
 ) {
-    const resp = await client.get(`posts`, {
-        signal,
-        searchParams: {
-            sortBy,
-            search,
-            offset,
-        },
-    })
-
-    return resp.json<GetPostsResp>()
+    return await client
+        .get(`posts`, {
+            signal,
+            searchParams: {
+                sortBy,
+                search,
+                offset,
+            },
+        })
+        .json<GetPostsResp>()
 }
 
 export async function createPost(content: string) {
-    await client.post(`posts`, { body: JSON.stringify({ content }) })
+    await client.post(`posts`, { json: { content } })
 }
 
 export async function likePost(postId: number) {
@@ -45,22 +45,22 @@ export async function getComments(
     search: string,
     offset: number,
 ) {
-    const resp = await client.get(`posts/${postId}/comments`, {
-        signal,
-        searchParams: {
-            sortBy,
-            search,
-            offset,
-        },
-    })
-
-    return resp.json<GetCommentsResp>()
+    return await client
+        .get(`posts/${postId}/comments`, {
+            signal,
+            searchParams: {
+                sortBy,
+                search,
+                offset,
+            },
+        })
+        .json<GetCommentsResp>()
 }
 
 export async function getComment(signal: AbortSignal, commentId: number) {
-    const resp = await client.get(`comments/${commentId}`, { signal })
-
-    return resp.json<D.Comment>()
+    return await client
+        .get(`comments/${commentId}`, { signal })
+        .json<D.Comment>()
 }
 
 export async function createComment({
@@ -79,7 +79,7 @@ export async function createComment({
     }
 
     await client.post(`posts/${postId}/comments`, {
-        body: JSON.stringify(body),
+        json: body,
     })
 }
 

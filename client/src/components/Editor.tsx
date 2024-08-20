@@ -4,6 +4,8 @@ import Spinner from "@/components/Spinner"
 import Button from "@/components/Button"
 import * as api from "@/api.ts"
 
+const MAX_SYMBOLS = 10000
+
 export default function Editor() {
     const queryClient = useQueryClient()
 
@@ -18,6 +20,7 @@ export default function Editor() {
     })
 
     function onSubmit(e: React.FormEvent) {
+        if (content.length > MAX_SYMBOLS) return
         e.preventDefault()
         createPost(content)
     }
@@ -27,6 +30,8 @@ export default function Editor() {
             onSubmit(e)
         }
     }
+
+    const isMaxSymbolsReached = content.length > MAX_SYMBOLS
 
     return (
         <form onSubmit={onSubmit} className="px-4">
@@ -38,8 +43,11 @@ export default function Editor() {
                 cols={30}
                 className="h-28 w-full resize-none rounded-2xl bg-zinc-200 p-4 outline-none transition-all duration-300 placeholder:text-zinc-500 dark:bg-zinc-800 md:h-40"
             ></textarea>
-            <div className="mt-4 flex items-center justify-end">
-                <Button>{isPending ? <Spinner /> : "SsSssend"}</Button>
+            <div className="mt-4 flex items-center justify-center">
+                {
+                    isMaxSymbolsReached && <div className="ml-auto mr-2 text-center text-xs font-bold text-red-500 md:text-sm">You have reached symbols limit (10000)</div>
+                }
+                <Button className="ml-auto" disabled={isMaxSymbolsReached}>{isPending ? <Spinner /> : "SsSssend"}</Button>
             </div>
         </form>
     )

@@ -13,6 +13,7 @@ import ErrorFallback from "@/components/ErrorFallback.tsx"
 import LikeIcon from "@/components/icons/LikeIcon.tsx"
 import CommentIcon from "@/components/icons/CommentIcon.tsx"
 import Spinner from "@/components/Spinner.tsx"
+import Expandable from "./Expandable"
 
 export default function Post(props: D.Post) {
     const queryClient = useQueryClient()
@@ -68,8 +69,8 @@ export default function Post(props: D.Post) {
                         {dateStr}
                     </span>
                 </div>
-                <p className="my-2 text-justify whitespace-pre-wrap md:my-4">
-                    {props.content}
+                <p className="my-2 text-justify whitespace-pre-wrap max-h-[48rem] overflow-y-auto pr-4">
+                    <Expandable content={props.content} />
                 </p>
                 <div className="flex gap-8">
                     <div
@@ -79,9 +80,7 @@ export default function Post(props: D.Post) {
                         <LikeIcon
                             className={`h-5 w-5 ${props.isLiked ? "fill-red-500" : "fill-zinc-500"}`}
                         />
-                        <span className="ml-4 ">
-                            {props.likesCount}
-                        </span>
+                        <span className="ml-4 ">{props.likesCount}</span>
                     </div>
                     <div
                         onClick={() => setIsCommentsOpened((prev) => !prev)}
