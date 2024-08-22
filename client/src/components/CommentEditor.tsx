@@ -1,12 +1,11 @@
-import { forwardRef, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import D, { Nullable } from "@/definitions.ts"
 import * as api from "@/api.ts"
 import Button from "@/components/Button"
 import Spinner from "@/components/Spinner"
 import ReplyLink from "@/components/ReplyLink.tsx"
-
-const MAX_SYMBOLS = 10000
+import { convertPixelsToRem } from "@/functions"
 
 type Props = {
     postId: number
@@ -17,6 +16,8 @@ type Props = {
     reply: D.Reply
 }
 
+const MAX_SYMBOLS = 10000
+
 export default forwardRef(function CommentEditor(
     props: Props,
     ref: React.ForwardedRef<HTMLTextAreaElement>,
@@ -24,6 +25,8 @@ export default forwardRef(function CommentEditor(
     const [content, setContent] = useState("")
 
     const queryClient = useQueryClient()
+
+    const innerRef = useRef<HTMLTextAreaElement>(null)
 
     const { mutateAsync: createComment, isPending } = useMutation({
         mutationFn: api.createComment,
@@ -36,6 +39,20 @@ export default forwardRef(function CommentEditor(
             })
         },
     })
+
+    // Providing local ref to forward ref
+    useImperativeHandle(ref, () => innerRef.current!)
+
+    // For textarea to autoresize based on content
+    useEffect(() => {
+        console.log(innerRef.current)
+        if (!innerRef.current) return
+
+        const textarea = innerRef.current
+
+        textarea.style.height = "auto"
+        textarea.style.height = `${convertPixelsToRem(textarea.scrollHeight)}rem`
+    }, [innerRef, content])
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -52,6 +69,10 @@ export default forwardRef(function CommentEditor(
         }
     }
 
+    function onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+        setContent(e.currentTarget.value)
+    }
+
     const isMaxSymbolsReached = content.length > MAX_SYMBOLS
 
     return (
@@ -66,16 +87,17 @@ export default forwardRef(function CommentEditor(
                     />
                 </div>
             )}
-            <form className="flex " onSubmit={onSubmit}>
+            <form className="flex" onSubmit={onSubmit}>
                 <textarea
                     onKeyDown={submitOnEnter}
                     placeholder="I think..."
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    ref={ref}
-                    className="md-p-2 mr-4 h-8 grow resize-none rounded-md bg-transparent bg-zinc-200 p-1 outline-none transition-colors duration-300 dark:bg-zinc-800 md:h-10 md:p-2"
+                    onChange={onChange}
+                    rows={1}
+                    ref={innerRef}
+                    className="md-p-2 mr-4 max-h-24 md:max-h-32 grow resize-none rounded-md bg-transparent bg-zinc-200 p-1 outline-none transition-colors duration-300 dark:bg-zinc-800 md:p-2"
                 ></textarea>
-                <Button disabled={isMaxSymbolsReached}>{isPending ? <Spinner /> : "SsSssend"}</Button>
+                <Button disabled={isMaxSymbolsReached}>{isPending ? <Spinner /> : "SsSsend"}</Button>
             </form>
             {
                 isMaxSymbolsReached && <div className="mt-4 text-center text-xs font-bold text-red-500 md:text-sm">You have reached symbols limit (10000)</div>

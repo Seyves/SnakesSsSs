@@ -55,7 +55,7 @@ export default function Organize(props: Props) {
                 onSubmit={onSearchSubmit}
             >
                 <input
-                    placeholder="Search sssSSsomething..."
+                    placeholder="Search sSsSsomething..."
                     value={value}
                     className="mx-2 min-w-0 bg-zinc-200 p-1 outline-none transition-all duration-300 placeholder:text-zinc-500 dark:bg-zinc-800 "
                     onChange={(e) => setValue(e.target.value)}

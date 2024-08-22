@@ -37,7 +37,7 @@ export default function Editor() {
         <form onSubmit={onSubmit} className="px-4">
             <textarea
                 onKeyDown={submitOnEnter}
-                placeholder="Tell us ssSSssomething..."
+                placeholder="Tell us sSsSsomething..."
                 onChange={(e) => setContent(e.target.value)}
                 value={content}
                 cols={30}
@@ -47,7 +47,7 @@ export default function Editor() {
                 {
                     isMaxSymbolsReached && <div className="ml-auto mr-2 text-center text-xs font-bold text-red-500 md:text-sm">You have reached symbols limit (10000)</div>
                 }
-                <Button className="ml-auto" disabled={isMaxSymbolsReached}>{isPending ? <Spinner /> : "SsSssend"}</Button>
+                <Button className="ml-auto" disabled={isMaxSymbolsReached}>{isPending ? <Spinner /> : "SsSsend"}</Button>
             </div>
         </form>
     )
